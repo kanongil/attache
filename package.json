@@ -1,0 +1,41 @@
+{
+  "name": "attache",
+  "version": "0.0.0",
+  "description": "Hapi plugin to register as a Consul service",
+  "main": "lib/index.js",
+  "scripts": {
+    "test": "lab -a code -t 100 -L",
+    "test-cov-html": "lab -a code -r html -o coverage.html"
+  },
+  "keywords": [
+    "consul",
+    "service",
+    "hapi",
+    "plugin"
+  ],
+  "author": "Gil Pedersen <gpdev@gpost.dk>",
+  "license": "BSD-2-Clause",
+  "dependencies": {
+    "consul": "^0.15.0",
+    "hoek": "^2.14.0",
+    "items": "^1.1.0",
+    "joi": "^6.6.1"
+  },
+  "devDependencies": {
+    "code": "^1.5.0",
+    "hapi": "^9.0.3",
+    "lab": "^5.15.2"
+  },
+  "directories": {
+    "example": "example",
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kanongil/attache.git"
+  },
+  "bugs": {
+    "url": "https://github.com/kanongil/attache/issues"
+  },
+  "homepage": "https://github.com/kanongil/attache#readme"
+}
