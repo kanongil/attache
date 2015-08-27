@@ -1,6 +1,8 @@
 # attaché
 
-A [Hapi](http://hapijs.com/) plugin that registers a [Consul](http://consul.io/) service.
+A [hapi.js](http://hapijs.com/) plugin that registers a [Consul](http://consul.io/) service.
+
+[![Build Status](https://travis-ci.org/kanongil/attache.svg?branch=master)](https://travis-ci.org/kanongil/attache)
 
 ## Example
 
