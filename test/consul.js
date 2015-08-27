@@ -76,7 +76,7 @@ describe('plugin', function () {
 
             return server.stop(function (err2) {
 
-                expect(err2).to.exist();
+                expect(err2).to.not.exist();
                 done();
             });
         });
