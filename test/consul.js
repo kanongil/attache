@@ -95,6 +95,41 @@ describe('plugin', function () {
         });
     });
 
+    it('supports custom hostnames', function (done) {
+
+        var server = new Hapi.Server();
+        server.connection({ host: 'localhost' });
+
+        server.register(HapiConsul, Hoek.ignore);
+
+        internals.consul.catalog.service.nodes({
+            service: 'hapi',
+            consistent: true
+        }, function (err, list1) {
+
+            expect(err).to.not.exist();
+            server.start(function (err) {
+
+                expect(err).to.not.exist();
+                internals.consul.catalog.service.nodes({
+                    service: 'hapi',
+                    consistent: true
+                }, function (err, list2) {
+
+                    expect(err).to.not.exist();
+                    server.stop(function (err) {
+
+                        expect(err).to.not.exist();
+                        expect(list1).to.have.length(0);
+                        expect(list2).to.have.length(1);
+                        expect(list2[0]).to.include({ ServiceAddress: '127.0.0.1' });
+                        done();
+                    });
+                });
+            });
+        });
+    });
+
     it('handles multiple connections', function (done) {
 
         var server = new Hapi.Server();
