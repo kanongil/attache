@@ -32,11 +32,66 @@ describe('plugin', function () {
 
         server.register(HapiConsul, Hoek.ignore);
 
-        server.start(function (err) {
+        internals.consul.catalog.service.nodes({
+            service: 'hapi',
+            consistent: true
+        }, function (err, list1) {
 
             expect(err).to.not.exist();
+            server.start(function (err) {
 
-            server.stop(done);
+                expect(err).to.not.exist();
+                internals.consul.catalog.service.nodes({
+                    service: 'hapi',
+                    consistent: true
+                }, function (err, list2) {
+
+                    expect(err).to.not.exist();
+                    server.stop(function (err) {
+
+                        expect(err).to.not.exist();
+                        expect(list1).to.have.length(0);
+                        expect(list2).to.have.length(1);
+                        done();
+                    });
+                });
+            });
+        });
+    });
+
+    it('creates tags from labels', function (done) {
+
+        var server = new Hapi.Server();
+        server.connection({ labels: ['b', 'c', 'a', 'b'], host: 'localhost' });
+
+        server.register(HapiConsul, Hoek.ignore);
+
+        internals.consul.catalog.service.nodes({
+            service: 'hapi',
+            consistent: true
+        }, function (err, list1) {
+
+            expect(err).to.not.exist();
+            server.start(function (err) {
+
+                expect(err).to.not.exist();
+                internals.consul.catalog.service.nodes({
+                    service: 'hapi',
+                    consistent: true
+                }, function (err, list2) {
+
+                    expect(err).to.not.exist();
+                    server.stop(function (err) {
+
+                        expect(err).to.not.exist();
+                        expect(list1).to.have.length(0);
+                        expect(list2).to.have.length(1);
+                        expect(list2[0].ServiceTags).to.exist();
+                        expect(list2[0].ServiceTags).to.only.once.include(['a', 'b', 'c']);
+                        done();
+                    });
+                });
+            });
         });
     });
 
@@ -48,11 +103,30 @@ describe('plugin', function () {
 
         server.register(HapiConsul, Hoek.ignore);
 
-        server.start(function (err) {
+        internals.consul.catalog.service.nodes({
+            service: 'hapi',
+            consistent: true
+        }, function (err, list1) {
 
             expect(err).to.not.exist();
+            server.start(function (err) {
 
-            server.stop(done);
+                expect(err).to.not.exist();
+                internals.consul.catalog.service.nodes({
+                    service: 'hapi',
+                    consistent: true
+                }, function (err, list2) {
+
+                    expect(err).to.not.exist();
+                    server.stop(function (err) {
+
+                        expect(err).to.not.exist();
+                        expect(list1).to.have.length(0);
+                        expect(list2).to.have.length(2);
+                        done();
+                    });
+                });
+            });
         });
     });
 
@@ -193,29 +267,30 @@ describe('plugin', function () {
             }
         });
 
-        server.start(function (err1) {
+        server.start(function (err) {
 
-            expect(err1).to.not.exist();
+            expect(err).to.not.exist();
+            internals.consul.agent.check.list(function (err, result1) {
 
-            internals.consul.agent.check.list(function (err2, result1) {
-
-                expect(err2).to.not.exist();
-                expect(result1['service:+hapitest:health']).to.exist();
-                expect(result1['service:+hapitest:health']).to.include({
-                    Status: 'critical'
-                });
-
+                expect(err).to.not.exist();
                 setTimeout(function () {
 
-                    internals.consul.agent.check.list(function (err3, result2) {
+                    internals.consul.agent.check.list(function (err, result2) {
 
-                        expect(err3).to.not.exist();
-                        expect(result2['service:+hapitest:health']).to.include({
-                            Status: 'passing',
-                            Output: 'HTTP GET ' + server.info.uri + '/_health: 200 OK Output: OK'
+                        expect(err).to.not.exist();
+                        server.stop(function (err) {
+
+                            expect(err).to.not.exist();
+                            expect(result1['service:+hapitest:health']).to.exist();
+                            expect(result1['service:+hapitest:health']).to.include({
+                                Status: 'critical'
+                            });
+                            expect(result2['service:+hapitest:health']).to.include({
+                                Status: 'passing',
+                                Output: 'HTTP GET ' + server.info.uri + '/_health: 200 OK Output: OK'
+                            });
+                            done();
                         });
-
-                        server.stop(done);
                     });
                 }, 1000);
             });
@@ -245,7 +320,7 @@ describe('plugin', function () {
             internals.consul.agent.check.list(function (err2, result) {
 
                 expect(err2).to.not.exist();
-                expect(result['service:+hapitest']).to.not.exist();
+                expect(result).to.not.include('service:+hapitest');
 
                 server.stop(done);
             });
