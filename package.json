@@ -16,7 +16,7 @@
   "author": "Gil Pedersen <gpdev@gpost.dk>",
   "license": "BSD-2-Clause",
   "dependencies": {
-    "consul": "^0.15.0",
+    "consul": "^0.17.0",
     "hoek": "^2.14.0",
     "items": "^1.1.0",
     "joi": "^6.6.1"

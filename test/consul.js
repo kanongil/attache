@@ -165,6 +165,35 @@ describe('plugin', function () {
         });
     });
 
+    it('starts in a healthy state', function (done) {
+
+        var server = new Hapi.Server();
+        server.connection();
+
+        server.register(HapiConsul, Hoek.ignore);
+
+        server.start(function (err) {
+
+            expect(err).to.not.exist();
+            internals.consul.agent.check.list(function (err, map) {
+
+                expect(err).to.not.exist();
+
+                var checkId = 'service:' + server.consul.connectionId(server.connections[0]);
+
+                server.stop(function (err) {
+
+                    expect(err).to.not.exist();
+                    expect(map).to.include(checkId);
+                    expect(map[checkId]).to.include({
+                        Status: 'passing'
+                    });
+                    done();
+                });
+            });
+        });
+    });
+
     it('start() returns error on missing consul api access', function (done) {
 
         var server = new Hapi.Server();
@@ -287,7 +316,8 @@ describe('plugin', function () {
             options: {
                 service: {
                     check: {
-                        interval: 1000
+                        interval: 1000,
+                        startHealthy: false
                     }
                 }
             }
@@ -327,7 +357,7 @@ describe('plugin', function () {
                             done();
                         });
                     });
-                }, 1000);
+                }, 1200);
             });
         });
     });
