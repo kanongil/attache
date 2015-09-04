@@ -95,6 +95,7 @@ All configuration is optional:
                 `429` for "warning", and any other response for "failure". If `false`, disables health checks.
                 Default: `"/_health"`.
      * `interval` - Number with check interval in ms, or a String. Default: `"5s"`.
+     * `startHealthy` - Boolean, when set starts service in "passing" state. Default: `true`.
  * `consul` - Object with consul agent connection information:
    * `host` - String with agent address. Default: `"127.0.0.1"`.
    * `port` - Number with agent HTTP(s) port. Default: `8500`.
