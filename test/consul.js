@@ -306,7 +306,7 @@ describe('plugin', function () {
         });
     });
 
-    it('performs health check', function (done) {
+    it('performs http health check', function (done) {
 
         var server = new Hapi.Server();
         server.connection({ plugins: { attache: { id: '+hapitest:health' } } });
@@ -346,10 +346,11 @@ describe('plugin', function () {
                         server.stop(function (err) {
 
                             expect(err).to.not.exist();
-                            expect(result1['service:+hapitest:health']).to.exist();
+                            expect(result1).to.include('service:+hapitest:health');
                             expect(result1['service:+hapitest:health']).to.include({
                                 Status: 'critical'
                             });
+                            expect(result2).to.include('service:+hapitest:health');
                             expect(result2['service:+hapitest:health']).to.include({
                                 Status: 'passing',
                                 Output: 'HTTP GET ' + server.info.uri + '/_health: 200 OK Output: OK'
@@ -360,6 +361,162 @@ describe('plugin', function () {
                 }, 1200);
             });
         });
+    });
+
+    it('supports ttl check-in', function (done) {
+
+        var server = new Hapi.Server();
+        server.connection({ plugins: { attache: { id: '+hapitest:health2' } } });
+
+        server.register({
+            register: HapiConsul,
+            options: {
+                service: {
+                    check: {
+                        ttl: '2s'
+                    }
+                }
+            }
+        }, Hoek.ignore);
+
+        server.start(function (err) {
+
+            expect(err).to.not.exist();
+            internals.consul.agent.check.list(function (err, result1) {
+
+                expect(err).to.not.exist();
+                server.consul.checkin(undefined, 'huh?', function (err) {
+
+                    expect(err).to.not.exist();
+                    internals.consul.agent.check.list(function (err, result2) {
+
+                        expect(err).to.not.exist();
+                        server.consul.checkin(false, 'bonkers…', function (err) {
+
+                            expect(err).to.not.exist();
+                            internals.consul.agent.check.list(function (err, result3) {
+
+                                expect(err).to.not.exist();
+                                server.stop(function (err) {
+
+                                    expect(err).to.not.exist();
+                                    expect(result1).to.include('service:+hapitest:health2:2');
+                                    expect(result1['service:+hapitest:health2:2']).to.include({
+                                        Status: 'passing'
+                                    });
+                                    expect(result2).to.include('service:+hapitest:health2:2');
+                                    expect(result2['service:+hapitest:health2:2']).to.include({
+                                        Status: 'warning',
+                                        Output: 'huh?'
+                                    });
+                                    expect(result3).to.include('service:+hapitest:health2:2');
+                                    expect(result3['service:+hapitest:health2:2']).to.include({
+                                        Status: 'critical',
+                                        Output: 'bonkers…'
+                                    });
+                                    done();
+                                });
+                            });
+                        });
+                    });
+                });
+            });
+        });
+    });
+
+    it('supports ttl check-in with disabled http check', function (done) {
+
+        var server = new Hapi.Server();
+        server.connection({ plugins: { attache: { id: '+hapitest:health3' } } });
+
+        server.register({
+            register: HapiConsul,
+            options: {
+                service: {
+                    check: {
+                        path: false,
+                        ttl: '2s',
+                        startHealthy: false
+                    }
+                }
+            }
+        }, Hoek.ignore);
+
+        server.start(function (err) {
+
+            expect(err).to.not.exist();
+            internals.consul.agent.check.list(function (err, result1) {
+
+                expect(err).to.not.exist();
+                server.consul.checkin(true, function (err) {
+
+                    expect(err).to.not.exist();
+                    internals.consul.agent.check.list(function (err, result2) {
+
+                        expect(err).to.not.exist();
+                        server.stop(function (err) {
+
+                            expect(err).to.not.exist();
+                            expect(result1).to.include('service:+hapitest:health3');
+                            expect(result1['service:+hapitest:health3']).to.include({
+                                Status: 'critical'
+                            });
+                            expect(result2).to.include('service:+hapitest:health3');
+                            expect(result2['service:+hapitest:health3']).to.include({
+                                Status: 'passing',
+                                Output: ''
+                            });
+                            done();
+                        });
+                    });
+                });
+            });
+        });
+    });
+
+    it('reports check-in errors', function (done) {
+
+        var server = new Hapi.Server();
+        server.connection({ plugins: { attache: { id: '+hapitest:health4' } } });
+
+        server.register({
+            register: HapiConsul,
+            options: {
+                service: {
+                    check: {
+                        path: false,
+                        ttl: '2s'
+                    }
+                }
+            }
+        }, Hoek.ignore);
+
+        server.consul.checkin(true, function (err) {
+
+            expect(err).to.exist();
+            done();
+        });
+    });
+
+    it('supports check-in without callback', function (done) {
+
+        var server = new Hapi.Server();
+        server.connection({ plugins: { attache: { id: '+hapitest:health5' } } });
+
+        server.register({
+            register: HapiConsul,
+            options: {
+                service: {
+                    check: {
+                        path: false,
+                        ttl: '2s'
+                    }
+                }
+            }
+        }, Hoek.ignore);
+
+        server.consul.checkin(true);
+        done();
     });
 
     it('handles disabled check.path option', function (done) {

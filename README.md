@@ -92,8 +92,9 @@ All configuration is optional:
    * `name` - String with service name, as registered with Consul. Default: `"hapi"`.
    * `check` - Object describing optional Consul health check:
      * `path` - String with path to http health check endpoint. Return any `2xx` code to indicate "passing",
-                `429` for "warning", and any other response for "failure". If `false`, disables health checks.
+                `429` for "warning", and any other response for "failure". If `false`, disables health check.
                 Default: `"/_health"`.
+     * `ttl` - Number with check interval in ms, or a String. Default: `undefined`.
      * `interval` - Number with check interval in ms, or a String. Default: `"5s"`.
      * `startHealthy` - Boolean, when set starts service in "passing" state. Default: `true`.
  * `consul` - Object with consul agent connection information:
@@ -102,7 +103,8 @@ All configuration is optional:
    * `secure` - Boolean indicating if HTTPS is required. Default: `false`
    * `ca` - Array of Strings or Buffers of trusted certificates in PEM format.
 
-If a health check is configured, you can either point it to an existing path, or preferably create a custom route:
+If a http health check is configured, you can either point it to an existing path, or preferably create a
+custom route:
 
 ```js
 server.route({
@@ -118,6 +120,16 @@ server.route({
 Note that Consul does not use the returned value but it is recorded as part of the health check, useable
 for debugging, etc.
 
+For `ttl` checks, a periodic check-in within the ttl timeout is required. This can be done using the `consul`
+object on the server, eg.:
+
+```js
+setInterval(function () {
+
+    server.consul.checkin(true);
+}
+```
+
 ### Connection plugin options
 
 Each connection is registered as a unique service instance with tags matching the connections labels.
@@ -127,6 +139,19 @@ Alternatively, a custom id can be specified with the connection plugin option:
 ```js
 server.connection({ plugins: { attache: { id: 'myservice-1' } } });
 ```
+
+### Consul class interface
+
+Available at `server.consul` once the plugin has been registered.
+
+#### `function checkin(isOk, [note], [callback])
+
+Reports current status of the consul service when TTL checks are used. If it has not been called
+successfully within the TTL interval since the last checkin, the health check will fail.
+
+ * `isOk` - `true` indicates a "passing" state, `false` a "failing", and anything else is a "warning".
+ * `note` - String with optional note that is recorded by consul.
+ * `callback` - Optional callback `function(err)` that is triggered once consul has responded to the check-in.
 
 ### Logging
 
