@@ -309,7 +309,7 @@ describe('plugin', function () {
     it('performs http health check', function (done) {
 
         var server = new Hapi.Server();
-        server.connection({ plugins: { attache: { id: '+hapitest:health' } } });
+        server.connection({ host: 'localhost', plugins: { attache: { id: '+hapitest:health' } } });
 
         server.register({
             register: HapiConsul,

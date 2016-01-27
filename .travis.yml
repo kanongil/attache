@@ -2,13 +2,12 @@ language: node_js
 sudo: false
 
 before_script:
-  - wget https://dl.bintray.com/mitchellh/consul/0.5.2_linux_amd64.zip -O /tmp/consul-bin.zip
+  - wget https://dl.bintray.com/mitchellh/consul/0.6.3_linux_amd64.zip -O /tmp/consul-bin.zip
   - unzip -o -d /tmp/bin /tmp/consul-bin.zip
   - /tmp/bin/consul --version
-  - /tmp/bin/consul agent -server -bootstrap-expect 1 -data-dir /tmp/consul &
+  - /tmp/bin/consul agent -server -bootstrap-expect 1 -dev &
   - sleep 5
 
 node_js:
-  - "0.10"
-  - "0.12"
-  - "iojs"
+  - 4
+  - 5
