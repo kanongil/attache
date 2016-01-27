@@ -7,9 +7,9 @@ A [hapi.js](http://hapijs.com/) plugin that registers a [Consul](http://consul.i
 ## Example
 
 ```js
-var Hapi = require('hapi');
+const Hapi = require('hapi');
 
-var server = new Hapi.Server();
+const server = new Hapi.Server();
 server.connection({ labels: 'public' });
 server.connection({ labels: 'private' });
 
@@ -20,7 +20,7 @@ server.register({
             name: 'myservice'
         }
     }
-}, function (err) {
+}, (err) => {
 
     if (err) {
         throw err;
@@ -29,7 +29,7 @@ server.register({
     server.select('public').route({
         method: 'GET',
         path: '/',
-        handler: function (request, reply) {
+        handler: (request, reply) => {
 
             return reply('Hello World!');
         }
@@ -38,7 +38,7 @@ server.register({
     server.select('private').route({
         method: 'GET',
         path: '/',
-        handler: function (request, reply) {
+        handler: (request, reply) => {
 
             return reply('Secret Hello!');
         }
@@ -47,16 +47,16 @@ server.register({
     server.route({
         method: 'GET',
         path: '/_health',
-        handler: function (request, reply) {
+        handler: (request, reply) => {
 
             return reply('OK');
         }
     });
 
-    server.start(function (err) {
+    server.start((err) => {
 
-        for (var idx = 0; idx < server.connections.length; idx++) {
-            var connection = server.connections[idx];
+        for (let i = 0; i < server.connections.length; ++i) {
+            const connection = server.connections[i];
             console.log('Server ' + connection.settings.labels + ' started at', connection.info.uri);
         }
     });
@@ -110,7 +110,7 @@ custom route:
 server.route({
     method: 'GET',
     path: '/_health',
-    handler: function (request, reply) {
+    handler: (request, reply) => {
 
         return reply('OK');
     }
@@ -124,7 +124,7 @@ For `ttl` checks, a periodic check-in within the ttl timeout is required. This c
 object on the server, eg.:
 
 ```js
-setInterval(function () {
+setInterval(() => {
 
     server.consul.checkin(true);
 }
@@ -151,7 +151,7 @@ successfully within the TTL interval since the last checkin, the health check wi
 
  * `isOk` - `true` indicates a "passing" state, `false` a "failing", and anything else is a "warning".
  * `note` - String with optional note that is recorded by consul.
- * `callback` - Optional callback `function(err)` that is triggered once consul has responded to the check-in.
+ * `callback` - Optional callback `(err) => {}` that is triggered once consul has responded to the check-in.
 
 ### Logging
 
