@@ -15,16 +15,19 @@
   ],
   "author": "Gil Pedersen <gpdev@gpost.dk>",
   "license": "BSD-2-Clause",
+  "engines": {
+    "node": ">=4.0.0"
+  },
   "dependencies": {
     "consul": "^0.23.0",
-    "hoek": "^2.14.0",
-    "items": "^1.1.0",
-    "joi": "^6.6.1"
+    "hoek": "^3.0.4",
+    "items": "^2.0.0",
+    "joi": "^7.2.2"
   },
   "devDependencies": {
-    "code": "^1.5.0",
-    "hapi": "^9.0.3",
-    "lab": "^5.15.2"
+    "code": "^2.1.0",
+    "hapi": "^12.1.0",
+    "lab": "^8.2.0"
   },
   "directories": {
     "example": "example",

@@ -1,8 +1,10 @@
-var Attache = require('../lib');
-var Hapi = require('hapi');
+'use strict';
+
+const Attache = require('../lib');
+const Hapi = require('hapi');
 
 
-var server = new Hapi.Server({ debug: { log: ['attache'] } });
+const server = new Hapi.Server({ debug: { log: ['attache'] } });
 server.connection({ labels: 'public' });
 server.connection({ labels: 'private' });
 
@@ -14,7 +16,7 @@ server.register({
             name: 'myservice'
         }
     }
-}, function (err) {
+}, (err) => {
 
     if (err) {
         throw err;
@@ -23,7 +25,7 @@ server.register({
     server.select('public').route({
         method: 'GET',
         path: '/',
-        handler: function (request, reply) {
+        handler: (request, reply) => {
 
             return reply('Hello World!');
         }
@@ -32,7 +34,7 @@ server.register({
     server.select('private').route({
         method: 'GET',
         path: '/',
-        handler: function (request, reply) {
+        handler: (request, reply) => {
 
             return reply('Secret Hello!');
         }
@@ -41,15 +43,15 @@ server.register({
     server.route({
         method: 'GET',
         path: '/_health',
-        handler: function (request, reply) {
+        handler: (request, reply) => {
 
             return reply('OK');
         }
     });
 
-    var state = 'starting';
-    var exitCode = 0;
-    var safeExit = function () {
+    let state = 'starting';
+    let exitCode = 0;
+    const safeExit = () => {
 
         if (state === 'starting' || state === 'aborted') {         // Abort start if we are just starting
             state = 'aborted';
@@ -58,7 +60,7 @@ server.register({
 
         if (state === 'started') {
             state = 'stopping';
-            server.stop(function () {
+            server.stop(() => {
 
                 state = 'stopped';
                 return safeExit();
@@ -73,7 +75,7 @@ server.register({
         process.exit(exitCode);
     };
 
-    server.start(function (err) {
+    server.start((err) => {
 
         if (state === 'aborted') {
             err = new Error('aborted');
@@ -85,8 +87,8 @@ server.register({
             return safeExit();
         }
 
-        for (var idx = 0; idx < server.connections.length; idx++) {
-            var connection = server.connections[idx];
+        for (let i = 0; i < server.connections.length; ++i) {
+            const connection = server.connections[i];
             console.log('Server ' + connection.settings.labels + ' started at', connection.info.uri);
         }
     });
@@ -96,7 +98,7 @@ server.register({
     process.on('SIGINT', safeExit);
     process.on('SIGTERM', safeExit);
     process.on('SIGHUP', safeExit);
-    process.on('uncaughtException', function (err) {
+    process.on('uncaughtException', (err) => {
 
         console.error('Fatal Exception:', err.stack);
         exitCode = 255;
