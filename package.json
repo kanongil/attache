@@ -19,15 +19,15 @@
     "node": ">=4.0.0"
   },
   "dependencies": {
-    "consul": "^0.23.0",
-    "hoek": "^3.0.4",
+    "consul": "^0.25.0",
+    "hoek": "^4.0.0",
     "items": "^2.0.0",
-    "joi": "^7.2.2"
+    "joi": "^8.1.0"
   },
   "devDependencies": {
     "code": "^2.1.0",
-    "hapi": "^12.1.0",
-    "lab": "^8.2.0"
+    "hapi": "^13.4.0",
+    "lab": "^10.5.1"
   },
   "directories": {
     "example": "example",
