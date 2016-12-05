@@ -5,7 +5,7 @@
 const Code = require('code');
 const Consul = require('consul');
 const Hapi = require('hapi');
-const HapiConsul = require('../lib');
+const HapiConsul = require('..');
 const Hoek = require('hoek');
 const Lab = require('lab');
 
