@@ -1,11 +1,11 @@
 language: node_js
 sudo: false
 
-before_script:
+before_install:
   - wget https://releases.hashicorp.com/consul/0.7.1/consul_0.7.1_linux_amd64.zip -O /tmp/consul-bin.zip
   - unzip -o -d /tmp/bin /tmp/consul-bin.zip
   - /tmp/bin/consul --version
-  - /tmp/bin/consul agent -dev &
+  - /tmp/bin/consul agent -server -dev &
   - sleep 5
 
 node_js:
