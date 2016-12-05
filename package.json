@@ -25,9 +25,9 @@
     "joi": "^8.1.0"
   },
   "devDependencies": {
-    "code": "^2.1.0",
+    "code": "^4.0.0",
     "hapi": "^13.4.0",
-    "lab": "^10.5.1"
+    "lab": "^11.2.1"
   },
   "directories": {
     "example": "example",
