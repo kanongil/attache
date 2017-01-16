@@ -319,7 +319,8 @@ describe('plugin', () => {
                 service: {
                     check: {
                         interval: 1000,
-                        startHealthy: false
+                        startHealthy: false,
+                        deregisterAfter: false
                     }
                 }
             }
@@ -591,6 +592,52 @@ describe('plugin', () => {
                     });
                 });
             });
+        });
+    });
+
+    it('reaps critical services', { timeout: 2 * 60 * 1000, parallel: true }, (done) => {
+
+        const server = new Hapi.Server();
+        server.connection({ plugins: { attache: { id: '+hapitest:reaper' } } });
+
+        server.register({
+            register: HapiConsul,
+            options: {
+                service: {
+                    check: {
+                        ttl: '20s',
+                        startHealthy: false,
+                        deregisterAfter: '1s'
+                    }
+                }
+            }
+        }, Hoek.ignore);
+
+        server.start((err) => {
+
+            expect(err).to.not.exist();
+            server.connections[0].server.listener.close();
+
+            const checkLater = () => {
+
+                setTimeout(() => {
+
+                    internals.consul.agent.service.list((err, result) => {
+
+                        expect(err).to.not.exist();
+                        if (result['+hapitest:reaper']) {
+                            return checkLater();
+                        }
+                        server.stop((err) => {
+
+                            expect(err).to.not.exist();
+                            done();
+                        });
+                    });
+                }, 1000);
+            };
+
+            return checkLater();
         });
     });
 });

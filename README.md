@@ -96,6 +96,8 @@ All configuration is optional:
                 Default: `"/_health"`.
      * `ttl` - Number with check interval in ms, or a String. Default: `undefined`.
      * `interval` - Number with check interval in ms, or a String. Default: `"5s"`.
+     * `deregisterAfter` - Number with automatic critical service de-registration interval in ms,
+     or a String. Default: `"120m"`.
      * `startHealthy` - Boolean, when set starts service in "passing" state. Default: `true`.
  * `consul` - Object with consul agent connection information:
    * `host` - String with agent address. Default: `"127.0.0.1"`.
