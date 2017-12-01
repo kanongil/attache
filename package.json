@@ -16,18 +16,21 @@
   "author": "Gil Pedersen <gpdev@gpost.dk>",
   "license": "BSD-2-Clause",
   "engines": {
-    "node": ">=4.0.0"
+    "node": ">=8.9.0"
+  },
+  "peerDependencies": {
+    "hapi": ">=17.0.0"
   },
   "dependencies": {
-    "consul": "^0.27.0",
-    "hoek": "^4.0.0",
-    "items": "^2.0.0",
-    "joi": "^10.0.2"
+    "bounce": "^1.0.3",
+    "consul": "^0.30.0",
+    "hoek": "^5.0.2",
+    "joi": "^13.0.1"
   },
   "devDependencies": {
-    "code": "^4.0.0",
-    "hapi": "^16.0.1",
-    "lab": "^11.2.1"
+    "code": "^5.1.2",
+    "hapi": "^17.0.1",
+    "lab": "^15.1.2"
   },
   "directories": {
     "example": "example",

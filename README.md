@@ -7,63 +7,47 @@ A [hapi.js](http://hapijs.com/) plugin that registers a [Consul](http://consul.i
 ## Example
 
 ```js
+const Attache = require('attache');
 const Hapi = require('hapi');
 
-const server = new Hapi.Server();
-server.connection({ labels: 'public' });
-server.connection({ labels: 'private' });
+const server = Hapi.Server();
 
-server.register({
-    register: require('attache'),
-    options: {
-        service: {
-            name: 'myservice'
-        }
-    }
-}, (err) => {
+const provision = async () => {
 
-    if (err) {
-        throw err;
-    }
-
-    server.select('public').route({
-        method: 'GET',
-        path: '/',
-        handler: (request, reply) => {
-
-            return reply('Hello World!');
+    await server.register({
+        register: require('attache'),
+        options: {
+            service: {
+                name: 'myservice'
+            }
         }
     });
 
-    server.select('private').route({
+    server.route({
         method: 'GET',
         path: '/',
-        handler: (request, reply) => {
+        handler() => {
 
-            return reply('Secret Hello!');
+            return 'Hello World!';
         }
     });
 
     server.route({
         method: 'GET',
         path: '/_health',
-        handler: (request, reply) => {
+        handler() => {
 
-            return reply('OK');
+            return 'OK';
         }
     });
 
-    server.start((err) => {
+    await server.start();
 
-        for (let i = 0; i < server.connections.length; ++i) {
-            const connection = server.connections[i];
-            console.log('Server ' + connection.settings.labels + ' started at', connection.info.uri);
-        }
-    });
+    console.log('Server started at', server.info.uri);
 });
 ```
 
-This will register a `"myservice"` service with Consul, with two instances using the `public` and `private` tags.
+This will register a `"myservice"` service with Consul.
 
 The service can be discovered using the standard Consul interfaces (eg. DNS or HTTP).
 
@@ -74,7 +58,6 @@ Install using `npm install attache`, and register with Hapi using `server.regist
 ### Service registration & de-registration
 
 Service registration is performed automatically as part of the `server.start()` processing.
-Any errors are returned through the callback.
 
 Service de-registration is performed as part of the `server.stop()` processing. Once the server has started,
 it is important that `server.stop()` is called (and completed) before exiting the process.
@@ -112,9 +95,9 @@ custom route:
 server.route({
     method: 'GET',
     path: '/_health',
-    handler: (request, reply) => {
+    handler() => {
 
-        return reply('OK');
+        return 'OK';
     }
 });
 ```
@@ -132,28 +115,27 @@ setInterval(() => {
 }
 ```
 
-### Connection plugin options
+### Custom service id options
 
-Each connection is registered as a unique service instance with tags matching the connections labels.
-The instances have host unique ids, generated based on the service name, listening port, and process PID.
-Alternatively, a custom id can be specified with the connection plugin option:
+The service is registered as a unique service instance.
+The instance has a host unique ids, generated based on the service name, listening port, and process PID.
+Alternatively, a custom id and/or tags can be specified with the connection plugin option:
 
 ```js
-server.connection({ plugins: { attache: { id: 'myservice-1' } } });
+Hapi.Server({ plugins: { attache: { id: 'myservice-1', tags: ['hello'] } } });
 ```
 
 ### Consul class interface
 
 Available at `server.consul` once the plugin has been registered.
 
-#### `function checkin(isOk, [note], [callback])
+#### `await checkin(isOk, [note])
 
 Reports current status of the consul service when TTL checks are used. If it has not been called
 successfully within the TTL interval since the last checkin, the health check will fail.
 
  * `isOk` - `true` indicates a "passing" state, `false` a "failing", and anything else is a "warning".
  * `note` - String with optional note that is recorded by consul.
- * `callback` - Optional callback `(err) => {}` that is triggered once consul has responded to the check-in.
 
 ### Logging
 

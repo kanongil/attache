@@ -13,308 +13,194 @@ const Lab = require('lab');
 // Declare internals
 
 const internals = {
-    consul: Consul()
+    consul: Consul({ promisify: true })
 };
 
 
 // Test shortcuts
 
-const lab = exports.lab = Lab.script();
-const describe = lab.describe;
-const it = lab.it;
-const expect = Code.expect;
+const { describe, it } = exports.lab = Lab.script();
+const { expect } = Code;
 
 
 describe('plugin', () => {
 
-    it('registers on start', (done) => {
+    it('registers on start', async () => {
 
-        const server = new Hapi.Server();
-        server.connection();
+        const server = Hapi.Server();
 
-        server.register(HapiConsul, Hoek.ignore);
+        await server.register(HapiConsul);
 
-        internals.consul.catalog.service.nodes({
+        const list1 = await internals.consul.catalog.service.nodes({
             service: 'hapi',
             consistent: true
-        }, (err, list1) => {
-
-            expect(err).to.not.exist();
-            server.start((err) => {
-
-                expect(err).to.not.exist();
-                internals.consul.catalog.service.nodes({
-                    service: 'hapi',
-                    consistent: true
-                }, (err, list2) => {
-
-                    expect(err).to.not.exist();
-                    server.stop((err) => {
-
-                        expect(err).to.not.exist();
-                        expect(list1).to.have.length(0);
-                        expect(list2).to.have.length(1);
-                        done();
-                    });
-                });
-            });
         });
-    });
 
-    it('creates tags from labels', (done) => {
+        await server.start();
 
-        const server = new Hapi.Server();
-        server.connection({ labels: ['b', 'c', 'a', 'b'], host: 'localhost' });
-
-        server.register(HapiConsul, Hoek.ignore);
-
-        internals.consul.catalog.service.nodes({
+        const list2 = await internals.consul.catalog.service.nodes({
             service: 'hapi',
             consistent: true
-        }, (err, list1) => {
-
-            expect(err).to.not.exist();
-            server.start((err) => {
-
-                expect(err).to.not.exist();
-                internals.consul.catalog.service.nodes({
-                    service: 'hapi',
-                    consistent: true
-                }, (err, list2) => {
-
-                    expect(err).to.not.exist();
-                    server.stop((err) => {
-
-                        expect(err).to.not.exist();
-                        expect(list1).to.have.length(0);
-                        expect(list2).to.have.length(1);
-                        expect(list2[0].ServiceTags).to.exist();
-                        expect(list2[0].ServiceTags).to.only.once.include(['a', 'b', 'c']);
-                        done();
-                    });
-                });
-            });
         });
+
+        await server.stop();
+
+        expect(list1).to.have.length(0);
+        expect(list2).to.have.length(1);
     });
 
-    it('supports custom hostnames', (done) => {
+    it('registers tags', async () => {
 
-        const server = new Hapi.Server();
-        server.connection({ host: 'localhost' });
+        const server = Hapi.Server({ plugins: { attache: { tags: ['b', 'c', 'a'] } }, host: 'localhost' });
 
-        server.register(HapiConsul, Hoek.ignore);
+        await server.register(HapiConsul);
 
-        internals.consul.catalog.service.nodes({
+        const list1 = await internals.consul.catalog.service.nodes({
             service: 'hapi',
             consistent: true
-        }, (err, list1) => {
-
-            expect(err).to.not.exist();
-            server.start((err) => {
-
-                expect(err).to.not.exist();
-                internals.consul.catalog.service.nodes({
-                    service: 'hapi',
-                    consistent: true
-                }, (err, list2) => {
-
-                    expect(err).to.not.exist();
-                    server.stop((err) => {
-
-                        expect(err).to.not.exist();
-                        expect(list1).to.have.length(0);
-                        expect(list2).to.have.length(1);
-                        expect(list2[0]).to.include({ ServiceAddress: '127.0.0.1' });
-                        done();
-                    });
-                });
-            });
         });
-    });
 
-    it('handles multiple connections', (done) => {
+        await server.start();
 
-        const server = new Hapi.Server();
-        server.connection({ labels: 'a' });
-        server.connection({ labels: 'b', plugins: { attache: { id: '+hapitest:b' } } });
-
-        server.register(HapiConsul, Hoek.ignore);
-
-        internals.consul.catalog.service.nodes({
+        const list2 = await internals.consul.catalog.service.nodes({
             service: 'hapi',
             consistent: true
-        }, (err, list1) => {
+        });
 
-            expect(err).to.not.exist();
-            server.start((err) => {
+        await server.stop();
 
-                expect(err).to.not.exist();
-                internals.consul.catalog.service.nodes({
-                    service: 'hapi',
-                    consistent: true
-                }, (err, list2) => {
+        expect(list1).to.have.length(0);
+        expect(list2).to.have.length(1);
+        expect(list2[0].ServiceTags).to.exist();
+        expect(list2[0].ServiceTags).to.only.once.include(['a', 'b', 'c']);
+    });
 
-                    expect(err).to.not.exist();
-                    server.stop((err) => {
+    it('supports custom hostnames', async () => {
 
-                        expect(err).to.not.exist();
-                        expect(list1).to.have.length(0);
-                        expect(list2).to.have.length(2);
-                        done();
-                    });
-                });
-            });
+        const server = Hapi.Server({ host: 'localhost' });
+
+        await server.register(HapiConsul);
+
+        const list1 = await internals.consul.catalog.service.nodes({
+            service: 'hapi',
+            consistent: true
+        });
+
+        await server.start();
+
+        const list2 = await internals.consul.catalog.service.nodes({
+            service: 'hapi',
+            consistent: true
+        });
+
+        await server.stop();
+
+        expect(list1).to.have.length(0);
+        expect(list2).to.have.length(1);
+        expect(list2[0]).to.include({ ServiceAddress: '127.0.0.1' });
+    });
+
+    it('starts in a healthy state', async () => {
+
+        const server = Hapi.Server();
+
+        await server.register(HapiConsul);
+
+        await server.start();
+
+        const map = await internals.consul.agent.check.list();
+
+        const checkId = 'service:' + server.consul.connectionId;
+
+        await server.stop();
+
+        expect(map).to.include(checkId);
+        expect(map[checkId]).to.include({
+            Status: 'passing'
         });
     });
 
-    it('starts in a healthy state', (done) => {
+    it('start() returns error on missing consul api access', async () => {
 
-        const server = new Hapi.Server();
-        server.connection();
+        const server = Hapi.Server();
 
-        server.register(HapiConsul, Hoek.ignore);
-
-        server.start((err) => {
-
-            expect(err).to.not.exist();
-            internals.consul.agent.check.list((err, map) => {
-
-                expect(err).to.not.exist();
-
-                const checkId = 'service:' + server.consul.connectionId(server.connections[0]);
-
-                server.stop((err) => {
-
-                    expect(err).to.not.exist();
-                    expect(map).to.include(checkId);
-                    expect(map[checkId]).to.include({
-                        Status: 'passing'
-                    });
-                    done();
-                });
-            });
-        });
-    });
-
-    it('start() returns error on missing consul api access', (done) => {
-
-        const server = new Hapi.Server();
-        server.connection();
-
-        server.register({
-            register: HapiConsul,
+        await server.register({
+            plugin: HapiConsul,
             options: {
                 consul: {
                     host: 'does.not.exist'
                 }
             }
-        }, Hoek.ignore);
-
-        server.start((err1) => {
-
-            expect(err1).to.exist();
-
-            return server.stop((err2) => {
-
-                expect(err2).to.not.exist();
-                done();
-            });
         });
+
+        const err = await expect(server.start()).to.reject();
+        expect(err.code).to.equal('ENOTFOUND');
+
+        await server.stop();
     });
 
-    it('throws on invalid registration options', (done) => {
+    it('throws on invalid registration options', async () => {
 
-        const server = new Hapi.Server();
-        server.connection();
+        const server = Hapi.Server();
 
-        const register = () => {
-
-            server.register({
-                register: HapiConsul,
-                options: {
-                    service: {
-                        name: false
-                    }
+        await expect(server.register({
+            plugin: HapiConsul,
+            options: {
+                service: {
+                    name: false
                 }
-            }, Hoek.ignore);
-        };
-
-        expect(register).to.throw(/^Invalid plugin options/);
-        done();
+            }
+        })).to.reject(/^Invalid plugin options/);
     });
 
-    it('throws on invalid connection plugin options', (done) => {
+    it('throws on invalid server plugin options', async () => {
 
-        const server = new Hapi.Server();
-        server.connection({ plugins: { attache: { unknown: true } } });
+        const server = Hapi.Server({ plugins: { attache: { unknown: true } } });
 
-        const register = () => {
-
-            server.register(HapiConsul, Hoek.ignore);
-        };
-
-        expect(register).to.throw(/^Invalid plugin connection options/);
-        done();
+        await expect(server.register(HapiConsul)).to.reject(/^Invalid server options/);
     });
 
-    it('supports manual maintenance mode', (done) => {
+    it('supports manual maintenance mode', async () => {
 
         const serviceName = '+hapitest:maint';
         const config = { plugins: { attache: { id: serviceName } } };
-        const server = new Hapi.Server();
-        server.connection(config);
+        const server = Hapi.Server(config);
 
-        server.register({
-            register: HapiConsul,
+        await server.register({
+            plugin: HapiConsul,
             options: {
                 service: {
                     name: serviceName
                 }
             }
-        }, Hoek.ignore);
-
-        server.start((err1) => {
-
-            expect(err1).to.not.exist();
-
-            server.consul.maintenance('Emergency!', (err2) => {
-
-                expect(err2).to.not.exist();
-
-                server.consul.maintenance((err3, status1) => {
-
-                    expect(err3).to.not.exist();
-                    expect(status1.length).to.equal(1);
-                    expect(status1[0]).to.include({
-                        Status: 'critical',
-                        Notes: 'Emergency!'
-                    });
-
-                    server.consul.maintenance(false, (err4) => {
-
-                        expect(err4).to.not.exist();
-
-                        server.consul.maintenance((err5, status2) => {
-
-                            expect(err5).to.not.exist();
-                            expect(status2.length).to.equal(1);
-                            expect(status2[0]).to.equal(false);
-
-                            server.stop(done);
-                        });
-                    });
-                });
-            });
         });
+
+        await server.start();
+
+        await server.consul.maintenance('Emergency!');
+
+        const status1 = await server.consul.maintenance();
+
+        expect(status1).to.include({
+            Status: 'critical',
+            Notes: 'Emergency!'
+        });
+
+        await server.consul.maintenance(false);
+
+        const status2 = await server.consul.maintenance();
+
+        await server.stop();
+
+        expect(status2).to.equal(false);
     });
 
-    it('performs http health check', (done) => {
+    it('performs http health check', async () => {
 
-        const server = new Hapi.Server();
-        server.connection({ host: 'localhost', plugins: { attache: { id: '+hapitest:health' } } });
+        const server = Hapi.Server({ host: '127.0.0.1', plugins: { attache: { id: '+hapitest:health' } } });
 
-        server.register({
-            register: HapiConsul,
+        await server.register({
+            plugin: HapiConsul,
             options: {
                 service: {
                     check: {
@@ -324,55 +210,44 @@ describe('plugin', () => {
                     }
                 }
             }
-        }, Hoek.ignore);
+        });
 
         server.route({
             method: 'GET',
             path: '/_health',
-            handler: (request, reply) => {
+            handler() {
 
-                return reply('OK');
+                return 'OK';
             }
         });
 
-        server.start((err) => {
+        await server.start();
 
-            expect(err).to.not.exist();
-            internals.consul.agent.check.list((err, result1) => {
+        const result1 = await internals.consul.agent.check.list();
 
-                expect(err).to.not.exist();
-                setTimeout(() => {
+        await Hoek.wait(1200);
 
-                    internals.consul.agent.check.list((err, result2) => {
+        const result2 = await internals.consul.agent.check.list();
 
-                        expect(err).to.not.exist();
-                        server.stop((err) => {
+        await server.stop();
 
-                            expect(err).to.not.exist();
-                            expect(result1).to.include('service:+hapitest:health');
-                            expect(result1['service:+hapitest:health']).to.include({
-                                Status: 'critical'
-                            });
-                            expect(result2).to.include('service:+hapitest:health');
-                            expect(result2['service:+hapitest:health']).to.include({
-                                Status: 'passing',
-                                Output: 'HTTP GET ' + server.info.uri + '/_health: 200 OK Output: OK'
-                            });
-                            done();
-                        });
-                    });
-                }, 1200);
-            });
+        expect(result1).to.include('service:+hapitest:health');
+        expect(result1['service:+hapitest:health']).to.include({
+            Status: 'critical'
+        });
+        expect(result2).to.include('service:+hapitest:health');
+        expect(result2['service:+hapitest:health']).to.include({
+            Status: 'passing',
+            Output: 'HTTP GET ' + server.info.uri + '/_health: 200 OK Output: OK'
         });
     });
 
-    it('supports ttl check-in', (done) => {
+    it('supports ttl check-in', async () => {
 
-        const server = new Hapi.Server();
-        server.connection({ plugins: { attache: { id: '+hapitest:health2' } } });
+        const server = Hapi.Server({ plugins: { attache: { id: '+hapitest:health2' } } });
 
-        server.register({
-            register: HapiConsul,
+        await server.register({
+            plugin: HapiConsul,
             options: {
                 service: {
                     check: {
@@ -380,60 +255,44 @@ describe('plugin', () => {
                     }
                 }
             }
-        }, Hoek.ignore);
+        });
 
-        server.start((err) => {
+        await server.start();
 
-            expect(err).to.not.exist();
-            internals.consul.agent.check.list((err, result1) => {
+        const result1 = await internals.consul.agent.check.list();
 
-                expect(err).to.not.exist();
-                server.consul.checkin(undefined, 'huh?', (err) => {
+        await server.consul.checkin(undefined, 'huh?');
 
-                    expect(err).to.not.exist();
-                    internals.consul.agent.check.list((err, result2) => {
+        const result2 = await internals.consul.agent.check.list();
 
-                        expect(err).to.not.exist();
-                        server.consul.checkin(false, 'bonkers…', (err) => {
+        await server.consul.checkin(false, 'bonkers…');
 
-                            expect(err).to.not.exist();
-                            internals.consul.agent.check.list((err, result3) => {
+        const result3 = await internals.consul.agent.check.list();
 
-                                expect(err).to.not.exist();
-                                server.stop((err) => {
+        await server.stop();
 
-                                    expect(err).to.not.exist();
-                                    expect(result1).to.include('service:+hapitest:health2:2');
-                                    expect(result1['service:+hapitest:health2:2']).to.include({
-                                        Status: 'passing'
-                                    });
-                                    expect(result2).to.include('service:+hapitest:health2:2');
-                                    expect(result2['service:+hapitest:health2:2']).to.include({
-                                        Status: 'warning',
-                                        Output: 'huh?'
-                                    });
-                                    expect(result3).to.include('service:+hapitest:health2:2');
-                                    expect(result3['service:+hapitest:health2:2']).to.include({
-                                        Status: 'critical',
-                                        Output: 'bonkers…'
-                                    });
-                                    done();
-                                });
-                            });
-                        });
-                    });
-                });
-            });
+        expect(result1).to.include('service:+hapitest:health2:2');
+        expect(result1['service:+hapitest:health2:2']).to.include({
+            Status: 'passing'
+        });
+        expect(result2).to.include('service:+hapitest:health2:2');
+        expect(result2['service:+hapitest:health2:2']).to.include({
+            Status: 'warning',
+            Output: 'huh?'
+        });
+        expect(result3).to.include('service:+hapitest:health2:2');
+        expect(result3['service:+hapitest:health2:2']).to.include({
+            Status: 'critical',
+            Output: 'bonkers…'
         });
     });
 
-    it('supports ttl check-in with disabled http check', (done) => {
+    it('supports ttl check-in with disabled http check', async () => {
 
-        const server = new Hapi.Server();
-        server.connection({ plugins: { attache: { id: '+hapitest:health3' } } });
+        const server = Hapi.Server({ plugins: { attache: { id: '+hapitest:health3' } } });
 
-        server.register({
-            register: HapiConsul,
+        await server.register({
+            plugin: HapiConsul,
             options: {
                 service: {
                     check: {
@@ -443,47 +302,35 @@ describe('plugin', () => {
                     }
                 }
             }
-        }, Hoek.ignore);
+        });
 
-        server.start((err) => {
+        await server.start();
 
-            expect(err).to.not.exist();
-            internals.consul.agent.check.list((err, result1) => {
+        const result1 = await internals.consul.agent.check.list();
 
-                expect(err).to.not.exist();
-                server.consul.checkin(true, (err) => {
+        await server.consul.checkin(true);
 
-                    expect(err).to.not.exist();
-                    internals.consul.agent.check.list((err, result2) => {
+        const result2 = await internals.consul.agent.check.list();
 
-                        expect(err).to.not.exist();
-                        server.stop((err) => {
+        await server.stop();
 
-                            expect(err).to.not.exist();
-                            expect(result1).to.include('service:+hapitest:health3');
-                            expect(result1['service:+hapitest:health3']).to.include({
-                                Status: 'critical'
-                            });
-                            expect(result2).to.include('service:+hapitest:health3');
-                            expect(result2['service:+hapitest:health3']).to.include({
-                                Status: 'passing',
-                                Output: ''
-                            });
-                            done();
-                        });
-                    });
-                });
-            });
+        expect(result1).to.include('service:+hapitest:health3');
+        expect(result1['service:+hapitest:health3']).to.include({
+            Status: 'critical'
+        });
+        expect(result2).to.include('service:+hapitest:health3');
+        expect(result2['service:+hapitest:health3']).to.include({
+            Status: 'passing',
+            Output: ''
         });
     });
 
-    it('reports check-in errors', (done) => {
+    it('reports check-in errors', async () => {
 
-        const server = new Hapi.Server();
-        server.connection({ plugins: { attache: { id: '+hapitest:health4' } } });
+        const server = Hapi.Server({ plugins: { attache: { id: '+hapitest:health4' } } });
 
-        server.register({
-            register: HapiConsul,
+        await server.register({
+            plugin: HapiConsul,
             options: {
                 service: {
                     check: {
@@ -492,43 +339,17 @@ describe('plugin', () => {
                     }
                 }
             }
-        }, Hoek.ignore);
-
-        server.consul.checkin(true, (err) => {
-
-            expect(err).to.exist();
-            done();
         });
+
+        await expect(server.consul.checkin(true)).to.reject();
     });
 
-    it('supports check-in without callback', (done) => {
+    it('handles disabled check.path option', async () => {
 
-        const server = new Hapi.Server();
-        server.connection({ plugins: { attache: { id: '+hapitest:health5' } } });
+        const server = Hapi.Server({ plugins: { attache: { id: '+hapitest' } } });
 
-        server.register({
-            register: HapiConsul,
-            options: {
-                service: {
-                    check: {
-                        path: false,
-                        ttl: '2s'
-                    }
-                }
-            }
-        }, Hoek.ignore);
-
-        server.consul.checkin(true);
-        done();
-    });
-
-    it('handles disabled check.path option', (done) => {
-
-        const server = new Hapi.Server();
-        server.connection({ plugins: { attache: { id: '+hapitest' } } });
-
-        server.register({
-            register: HapiConsul,
+        await server.register({
+            plugin: HapiConsul,
             options: {
                 service: {
                     check: {
@@ -536,72 +357,52 @@ describe('plugin', () => {
                     }
                 }
             }
-        }, Hoek.ignore);
-
-        server.start((err1) => {
-
-            expect(err1).to.not.exist();
-
-            internals.consul.agent.check.list((err2, result) => {
-
-                expect(err2).to.not.exist();
-                expect(result).to.not.include('service:+hapitest');
-
-                server.stop(done);
-            });
         });
+
+        await server.start();
+
+        const result = internals.consul.agent.check.list();
+
+        await server.stop();
+
+        expect(result).to.not.include('service:+hapitest');
     });
 
-    it('forwards maintenance() backend errors', (done) => {
+    it('forwards maintenance() backend errors', async () => {
 
-        const server = new Hapi.Server();
-        server.connection({ plugins: { attache: { id: '+hapitest:deregisterfail' } } });
+        const server = Hapi.Server({ plugins: { attache: { id: '+hapitest:deregisterfail' } } });
 
-        server.register(HapiConsul, Hoek.ignore);
+        await server.register(HapiConsul);
 
-        server.start((err1) => {
+        await server.start();
 
-            expect(err1).to.not.exist();
+        const saved1 = server.consul.api.agent.check.list;
+        server.consul.api.agent.check.list = () => {
 
-            const saved1 = server.consul.api.agent.check.list;
-            server.consul.api.agent.check.list = (callback) => {
+            server.consul.api.agent.check.list = saved1;
+            throw new Error('failed');
+        };
 
-                server.consul.api.agent.check.list = saved1;
-                return callback(new Error('failed'));
-            };
+        await expect(server.consul.maintenance()).to.reject();
 
-            server.consul.maintenance((err2) => {
+        const saved2 = server.consul.api.agent.service.maintenance;
+        server.consul.api.agent.service.maintenance = (opts) => {
 
-                expect(err2).to.exist();
+            server.consul.api.agent.service.maintenance = saved2;
+            throw new Error('failed');
+        };
 
-                const saved2 = server.consul.api.agent.service.maintenance;
-                server.consul.api.agent.service.maintenance = (opts, callback) => {
+        await expect(server.consul.maintenance(false)).to.reject();
 
-                    server.consul.api.agent.service.maintenance = saved2;
-                    return callback(new Error('failed'));
-                };
-
-                server.consul.maintenance(false, (err3) => {
-
-                    expect(err3).to.exist();
-
-                    server.stop((err4) => {
-
-                        expect(err4).to.not.exist();
-                        done();
-                    });
-                });
-            });
-        });
+        await server.stop();
     });
 
-    it('reaps critical services', { timeout: 2 * 60 * 1000, parallel: true }, (done) => {
+    it('reaps critical services', { timeout: 2 * 60 * 1000, parallel: true }, async () => {
 
-        const server = new Hapi.Server();
-        server.connection({ plugins: { attache: { id: '+hapitest:reaper' } } });
+        const server = Hapi.Server({ plugins: { attache: { id: '+hapitest:reaper' } }, host: 'localhost' });
 
-        server.register({
-            register: HapiConsul,
+        await server.register({
+            plugin: HapiConsul,
             options: {
                 service: {
                     check: {
@@ -611,33 +412,25 @@ describe('plugin', () => {
                     }
                 }
             }
-        }, Hoek.ignore);
-
-        server.start((err) => {
-
-            expect(err).to.not.exist();
-            server.connections[0].server.listener.close();
-
-            const checkLater = () => {
-
-                setTimeout(() => {
-
-                    internals.consul.agent.service.list((err, result) => {
-
-                        expect(err).to.not.exist();
-                        if (result['+hapitest:reaper']) {
-                            return checkLater();
-                        }
-                        server.stop((err) => {
-
-                            expect(err).to.not.exist();
-                            done();
-                        });
-                    });
-                }, 1000);
-            };
-
-            return checkLater();
         });
+
+        await server.start();
+
+        server.listener.close();
+
+        const checkLater = async () => {
+
+            await Hoek.wait(1000);
+
+            const result = await internals.consul.agent.service.list();
+
+            if (result['+hapitest:reaper']) {
+                return checkLater();
+            }
+        };
+
+        await checkLater();
+
+        await server.stop();
     });
 });
