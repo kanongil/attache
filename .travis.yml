@@ -6,7 +6,7 @@ env:
   - CONSUL=1.0.1
 
 before_install:
-  - curl -L https://releases.hashicorp.com/consul/$CONSUL/consul_$CONSUL_linux_amd64.zip -o /tmp/consul-bin.zip
+  - curl -L "https://releases.hashicorp.com/consul/${CONSUL}/consul_${CONSUL}_linux_amd64.zip" -o /tmp/consul-bin.zip
   - unzip -o -d /tmp/bin /tmp/consul-bin.zip
   - /tmp/bin/consul --version
   - /tmp/bin/consul agent -server -dev &
