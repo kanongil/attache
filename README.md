@@ -82,6 +82,9 @@ All configuration is optional:
      * `deregisterAfter` - Number with automatic critical service de-registration interval in ms,
      or a String. Default: `"120m"`.
      * `startHealthy` - Boolean, when set starts service in "passing" state. Default: `true`.
+ * `retryStrategy` - async function that is passed `(consul, err, details)` when an automatic registration or
+                     de-registration fails. If a Number is returned, it is used as a delay before retrying.
+ * `lowProfile`- Boolean that enables a low profile mode, which registers in the background and silences errors.
  * `consul` - Object with consul agent connection information:
    * `host` - String with agent address. Default: `"127.0.0.1"`.
    * `port` - Number with agent HTTP(s) port. Default: `8500`.
@@ -141,4 +144,3 @@ successfully within the TTL interval since the last checkin, the health check wi
 
 All internal logging is tagged with `attache` and performed at the server level.
 Any de-registration errors are only exposed through this mechanism.
-

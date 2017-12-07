@@ -139,6 +139,78 @@ describe('plugin', () => {
         await server.stop();
     });
 
+    it('start() works on missing consul api access in lowProfile mode', async () => {
+
+        const server = Hapi.Server();
+
+        await server.register({
+            plugin: HapiConsul,
+            options: {
+                consul: {
+                    host: 'does.not.exist'
+                },
+                lowProfile: true
+            }
+        });
+
+        await server.start();
+
+        const list = await internals.consul.catalog.service.nodes({
+            service: 'hapi',
+            consistent: true
+        });
+
+        await server.stop();
+
+        expect(list).to.have.length(0);
+    });
+
+    it('supports the retryStrategy option', async () => {
+
+        const server = Hapi.Server();
+
+        let timer;
+        let elapsed = 0;
+
+        const retryStrategy = (consul, error, details) => {
+
+            if (details.action === 'register') {
+                if (details.attempt === 1) {
+                    timer = new Hoek.Bench();
+                    return 50;
+                }
+                if (details.attempt === 2) {
+                    elapsed = timer.elapsed();
+                    consul.api._opts.baseUrl.port = 8500;
+                    return 0;
+                }
+            }
+        };
+
+        await server.register({
+            plugin: HapiConsul,
+            options: {
+                consul: {
+                    port: 8501
+                },
+                lowProfile: true,
+                retryStrategy
+            }
+        });
+
+        await server.start();
+
+        const list = await internals.consul.catalog.service.nodes({
+            service: 'hapi',
+            consistent: true
+        });
+
+        await server.stop();
+
+        expect(elapsed).to.be.at.least(50);
+        expect(list).to.have.length(1);
+    });
+
     it('throws on invalid registration options', async () => {
 
         const server = Hapi.Server();
