@@ -171,6 +171,7 @@ describe('plugin', () => {
 
         let timer;
         let elapsed = 0;
+        let started = false;
 
         const retryStrategy = (consul, error, details) => {
 
@@ -179,7 +180,8 @@ describe('plugin', () => {
                     timer = new Hoek.Bench();
                     return 50;
                 }
-                if (details.attempt === 2) {
+
+                if (details.attempt === 2 && started) {
                     elapsed = timer.elapsed();
                     consul.api._opts.baseUrl.port = 8500;
                     return 0;
@@ -199,6 +201,10 @@ describe('plugin', () => {
         });
 
         await server.start();
+
+        started = true;
+
+        await Hoek.wait(80);
 
         const list = await internals.consul.catalog.service.nodes({
             service: 'hapi',
