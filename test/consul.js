@@ -511,4 +511,26 @@ describe('plugin', () => {
 
         await server.stop();
     });
+
+    it('doesn\'t register on initialize', async () => {
+
+        const server = Hapi.Server();
+        await server.register(HapiConsul);
+        await server.initialize();
+
+        const list1 = await internals.consul.catalog.service.nodes({
+            service: 'hapi',
+            consistent: true
+        });
+
+        await server.stop();
+
+        const list2 = await internals.consul.catalog.service.nodes({
+            service: 'hapi',
+            consistent: true
+        });
+
+        expect(list1.length).to.equal(0);
+        expect(list2.length).to.equal(0);
+    });
 });
