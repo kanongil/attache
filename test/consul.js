@@ -217,6 +217,43 @@ describe('plugin', () => {
         expect(list).to.have.length(1);
     });
 
+    it('does not retry when retryStrategy returns undefined', async () => {
+
+        const server = Hapi.Server();
+
+        let retryDetails;
+
+        const retryStrategy = (consul, error, details) => {
+
+            retryDetails = details;
+        };
+
+        await server.register({
+            plugin: HapiConsul,
+            options: {
+                consul: {
+                    port: 8501
+                },
+                lowProfile: true,
+                retryStrategy
+            }
+        });
+
+        await server.start();
+
+        await Hoek.wait(80);
+
+        const list = await internals.consul.catalog.service.nodes({
+            service: 'hapi',
+            consistent: true
+        });
+
+        await server.stop();
+
+        expect(retryDetails).to.contain({ action: 'deregister', attempt: 1 });
+        expect(list).to.have.length(0);
+    });
+
     it('throws on invalid registration options', async () => {
 
         const server = Hapi.Server();
