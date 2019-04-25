@@ -8,7 +8,7 @@ A [hapi.js](http://hapijs.com/) plugin that registers a [Consul](http://consul.i
 
 ```js
 const Attache = require('attache');
-const Hapi = require('hapi');
+const Hapi = require('@hapi/hapi');
 
 const server = Hapi.Server();
 

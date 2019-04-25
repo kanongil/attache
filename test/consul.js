@@ -2,12 +2,12 @@
 
 // Load modules
 
-const Code = require('code');
+const Code = require('@hapi/code');
 const Consul = require('consul');
-const Hapi = require('hapi');
+const Hapi = require('@hapi/hapi');
 const HapiConsul = require('..');
-const Hoek = require('hoek');
-const Lab = require('lab');
+const Hoek = require('@hapi/hoek');
+const Lab = require('@hapi/lab');
 
 
 // Declare internals

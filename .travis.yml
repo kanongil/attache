@@ -2,8 +2,10 @@ language: node_js
 dist: trusty
 
 env:
-  - CONSUL=0.9.3
-  - CONSUL=1.0.1
+  - CONSUL=0.9.3 HAPI_VERSION="18"
+  - CONSUL=1.0.1 HAPI_VERSION="18"
+  - CONSUL=1.4.4 HAPI_VERSION="17"
+  - CONSUL=1.4.4 HAPI_VERSION="18"
 
 before_install:
   - curl -L "https://releases.hashicorp.com/consul/${CONSUL}/consul_${CONSUL}_linux_amd64.zip" -o /tmp/consul-bin.zip
@@ -12,9 +14,12 @@ before_install:
   - /tmp/bin/consul agent -server -dev &
   - sleep 5
 
+install:
+  - "npm install"
+  - "npm install @hapi/hapi@$HAPI_VERSION"
+
 node_js:
   - "8"
-  - "9"
+  - "10"
+  - "12"
   - "node"
-
-sudo: false

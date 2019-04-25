@@ -1,7 +1,7 @@
 'use strict';
 
 const Attache = require('../lib');
-const Hapi = require('hapi');
+const Hapi = require('@hapi/hapi');
 
 
 const server = new Hapi.Server({ debug: { log: ['attache'] } });
@@ -80,6 +80,7 @@ server.register({
         if (state === 'aborted') {
             err = new Error('aborted');
         }
+
         state = 'started';
 
         if (err) {
