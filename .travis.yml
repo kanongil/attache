@@ -4,8 +4,7 @@ dist: trusty
 env:
   - CONSUL=0.9.3 HAPI_VERSION="18"
   - CONSUL=1.0.1 HAPI_VERSION="18"
-  - CONSUL=1.4.4 HAPI_VERSION="17"
-  - CONSUL=1.4.4 HAPI_VERSION="18"
+  - CONSUL=1.6.1 HAPI_VERSION="18"
 
 before_install:
   - curl -L "https://releases.hashicorp.com/consul/${CONSUL}/consul_${CONSUL}_linux_amd64.zip" -o /tmp/consul-bin.zip
@@ -19,7 +18,7 @@ install:
   - "npm install @hapi/hapi@$HAPI_VERSION"
 
 node_js:
-  - "8"
   - "10"
   - "12"
+  - "13"
   - "node"
