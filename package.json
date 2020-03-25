@@ -33,7 +33,6 @@
     "@hapi/lab": "^22.0.4"
   },
   "directories": {
-    "example": "example",
     "test": "test"
   },
   "repository": {
