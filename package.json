@@ -24,13 +24,13 @@
   "dependencies": {
     "@hapi/bounce": "^2.0.0",
     "@hapi/hoek": "^9.0.4",
-    "@hapi/joi": "^17.1.1",
-    "consul": "^0.37.0"
+    "consul": "^0.40.0",
+    "joi": "^17.4.0"
   },
   "devDependencies": {
     "@hapi/code": "^8.0.1",
-    "@hapi/hapi": "^19.1.1",
-    "@hapi/lab": "^22.0.4"
+    "@hapi/hapi": "^20.1.4",
+    "@hapi/lab": "^24.2.1"
   },
   "directories": {
     "test": "test"

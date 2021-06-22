@@ -2,9 +2,9 @@ language: node_js
 dist: trusty
 
 env:
-  - CONSUL=1.7.2 HAPI_VERSION="19"
-  - CONSUL=1.7.2 HAPI_VERSION="18"
-  - CONSUL=1.0.2 HAPI_VERSION="19"
+  - CONSUL=1.9.6 HAPI_VERSION="20"
+  - CONSUL=1.9.6 HAPI_VERSION="18"
+  - CONSUL=1.0.2 HAPI_VERSION="20"
 
 before_install:
   - curl -L "https://releases.hashicorp.com/consul/${CONSUL}/consul_${CONSUL}_linux_amd64.zip" -o /tmp/consul-bin.zip
@@ -19,5 +19,5 @@ install:
 
 node_js:
   - "12"
-  - "13"
+  - "14"
   - "node"
